@@ -1,2 +1,2 @@
 boto3
-python
+python3
