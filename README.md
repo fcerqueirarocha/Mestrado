@@ -12,7 +12,6 @@ Instale as dependências listadas em `requirements.txt`:
 pip install -r requirements.txt
 ```
 
-
 ## Configura\xC3\xA7\xC3\xA3o de credenciais
 
 As credenciais da AWS devem ser definidas no arquivo `aws_config.py`. Substitua os
