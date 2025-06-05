@@ -4,6 +4,7 @@ Este reposit\xC3\xB3rio cont\xC3\xA9m exemplos para conectar ao Amazon Athena us
 
 Veja o arquivo `connect_athena.py` para um script simples de conex\xC3\xA3o e execu\xC3\xA7\xC3\xA3o de consultas.
 
+
 ## Instalação
 
 Instale as dependências listadas em `requirements.txt`:
@@ -11,7 +12,6 @@ Instale as dependências listadas em `requirements.txt`:
 ```bash
 pip install -r requirements.txt
 ```
-
 
 ## Configura\xC3\xA7\xC3\xA3o de credenciais
 
