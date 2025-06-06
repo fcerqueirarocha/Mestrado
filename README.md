@@ -18,12 +18,5 @@ As credenciais da AWS devem ser definidas em variáveis de ambiente. Substitua o
 valores de `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY` pelas suas credenciais
 reais **apenas localmente**
 
-Exemplo:
-
-```python
-AWS_ACCESS_KEY_ID = "SUA_ACCESS_KEY"
-AWS_SECRET_ACCESS_KEY = "SEU_SECRET_KEY"
-AWS_REGION = "us-east-1"
-```
 
 Em seguida, execute `connect_athena.py` para testar a conex\xC3\xA3o.
