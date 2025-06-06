@@ -14,10 +14,9 @@ pip install -r requirements.txt
 
 ## Configura\xC3\xA7\xC3\xA3o de credenciais
 
-As credenciais da AWS devem ser definidas no arquivo `aws_config.py`. Substitua os
+As credenciais da AWS devem ser definidas em variáveis de ambiente. Substitua os
 valores de `AWS_ACCESS_KEY_ID` e `AWS_SECRET_ACCESS_KEY` pelas suas credenciais
-reais **apenas localmente**. N\xC3\xA3o envie credenciais verdadeiras para o
-reposit\xC3\xB3rio.
+reais **apenas localmente**
 
 Exemplo:
 
