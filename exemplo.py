@@ -26,8 +26,8 @@ if __name__ == "__main__":
                 and ord.customer_email in ('{email_list}');
                 """
         # Define the database and output location
-        database = "data-platform-gold"
-        output_location = "s3://eventbroadcaster-athena-queries-dev/"
+        database = connect_athena.DATABASE  # Use the constant from connect_athena
+        output_location = connect_athena.OUTPUT_LOCATION  # Use the constant from connect_athena
         exec_id = connect_athena.run_query(query, database, output_location)
         print(f"Started Athena query: {exec_id}")
 
