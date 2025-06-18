@@ -153,6 +153,18 @@ def gerar_recomendacoes(cluster_produtos: dict, top_n=3) -> dict:
 #FIM Veio do arquivo product_analysis.py
 # ######################
 
+########################
+#cross-sell
+def fetch_dataframe(query: str, database: str, output_location: str) -> pd.DataFrame:
+    execution_id = run_query(query, database, output_location)
+    wait_for_query_completion(execution_id)
+    results = get_query_results(execution_id)
+    columns = [col["VarCharValue"] for col in results[0]["Data"]]
+    data = [[col.get("VarCharValue", "") for col in row["Data"]] for row in results[1:]]
+    return pd.DataFrame(data, columns=columns)
+# Fim cross-sell
+########################
+
 # Função principal que orquestra a extração, transformação e exportação
 def main():
     # Consulta SQL com JOIN entre orders e profiles
