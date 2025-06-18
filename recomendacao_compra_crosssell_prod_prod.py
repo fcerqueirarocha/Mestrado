@@ -32,7 +32,7 @@ def gerar_perfis_para_llm(df: pd.DataFrame) -> pd.DataFrame:
     df['perfil_compra_texto'] = df.apply(gerar_perfil_compra_texto, axis=1)
     return df[['customer_email', 'perfil_compra_texto']]
 
-def aplicar_dbscan(df: pd.DataFrame, eps=0.5, min_samples=3) -> pd.DataFrame:
+def aplicar_dbscan(df: pd.DataFrame, eps=0.5, min_samples=1) -> pd.DataFrame:
     X = df.drop(columns=['customer_email'])
     X_scaled = StandardScaler().fit_transform(X)
     dbscan = DBSCAN(eps=eps, min_samples=min_samples)
@@ -84,6 +84,7 @@ def main():
     embeddings_df.to_csv("embeddings_perfis.csv", index=False)
 
     clusters_df = aplicar_dbscan(embeddings_df)
+    print(clusters_df['cluster'].value_counts())
     clusters_df.to_csv("clusters_perfis.csv", index=False)
 
     df_clusters = clusters_df
