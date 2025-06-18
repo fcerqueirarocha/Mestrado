@@ -33,8 +33,6 @@ def gerar_perfis_para_llm(df: pd.DataFrame) -> pd.DataFrame:
     return df[['customer_email', 'perfil_compra_texto']]
 
 def aplicar_dbscan(df: pd.DataFrame, eps=0.5, min_samples=3) -> pd.DataFrame:
-    if 'customer_email' not in df.columns:
-        raise KeyError("A coluna 'customer_email' não está disponível para aplicar DBSCAN.")
     X = df.drop(columns=['customer_email'])
     X_scaled = StandardScaler().fit_transform(X)
     dbscan = DBSCAN(eps=eps, min_samples=min_samples)
@@ -71,9 +69,8 @@ def main():
         JOIN profiles ON orders.customer_email = profiles.email
         WHERE orders.tenant_id = 3575
           AND profiles.tenant_id = 3575
-          AND orders.date BETWEEN current_timestamp - interval '30' day AND current_timestamp
+          AND orders.date BETWEEN current_timestamp - interval '90' day AND current_timestamp
     """
-
     df = fetch_dataframe(query, DATABASE, OUTPUT_LOCATION)
     perfis = gerar_perfis_para_llm(df)
     df_completo = df.copy()
@@ -104,46 +101,53 @@ def main():
         print(f"\nCluster {cluster} — {sugestao}")
         print(f"E-mails: {', '.join(emails)}")
 
-    # Consulta de produtos e categorias para cross-selling
-    cross_selling_query = """
+    # 1. Consulta SQL para identificar coocorrência de produtos
+    coocorrencia_query = """
         SELECT 
-            ordi.name AS produto, 
-            ordi.brand AS marca, 
-            catgi.name AS categoria
-        FROM orders_items ordi
-        INNER JOIN orders_items_categories catgi 
-            ON ordi.product_id = catgi.product_id
-            AND ordi.tenant_id = catgi.tenant_id
-        WHERE ordi.tenant_id = 3575
-        GROUP BY ordi.name, ordi.brand, catgi.name
-        ORDER BY ordi.name;
+            a.name AS produto_a,
+            b.name AS produto_b,
+            COUNT(*) AS vezes_juntos
+        FROM orders_items a
+        JOIN orders_items b 
+          ON a.order_id = b.order_id 
+         AND a.product_id != b.product_id
+         AND a.tenant_id = b.tenant_id
+        WHERE a.tenant_id = 3575
+        GROUP BY a.name, b.name
+        HAVING COUNT(*) > 1
+        ORDER BY vezes_juntos DESC
     """
-    cross_df = fetch_dataframe(cross_selling_query, DATABASE, OUTPUT_LOCATION)
+    coocorrencia_df = fetch_dataframe(coocorrencia_query, DATABASE, OUTPUT_LOCATION)
 
+    # 2. Construção do mapa produto -> produtos frequentemente comprados juntos
+    coocorrencia_map = {}
+    for _, row in coocorrencia_df.iterrows():
+        produto_a = row['produto_a']
+        produto_b = row['produto_b']
+        if produto_a not in coocorrencia_map:
+            coocorrencia_map[produto_a] = set()
+        coocorrencia_map[produto_a].add(produto_b)
+
+    # 3. Preparar listas auxiliares para cada cluster
     produtos_por_cluster = {cluster: [produto for produto, _ in contagem.most_common(2)]
                             for cluster, contagem in cluster_produtos.items()}
     emails_por_cluster = {cluster: df_merged[df_merged['cluster'] == cluster]['customer_email'].tolist()
                           for cluster in df_merged['cluster'].unique()}
 
-    cross_map = {}
-    for produto in cross_df['produto'].unique():
-        categorias = cross_df[cross_df['produto'] == produto]['categoria'].unique()
-        produtos_sugeridos = cross_df[
-            cross_df['categoria'].isin(categorias) & (cross_df['produto'] != produto)
-        ]['produto'].unique()
-        cross_map[produto] = list(produtos_sugeridos)
-
-    sugestoes_cross = {}
+    # 4. Gerar sugestões de cross-sell por coocorrência
+    sugestoes_cross_coocorrencia = {}
     for cluster, produtos in produtos_por_cluster.items():
         sugestoes = set()
         for produto in produtos:
-            sugestoes.update(cross_map.get(produto, []))
-        sugestoes_cross[cluster] = list(sugestoes)
+            sugestoes.update(coocorrencia_map.get(produto, []))
+        sugestoes_cross_coocorrencia[cluster] = list(sugestoes)
 
-    for cluster, sugestoes in sugestoes_cross.items():
+    # 5. Exibir resultados
+    for cluster, sugestoes in sugestoes_cross_coocorrencia.items():
         print(f"\nCluster {cluster} — Produtos principais: {', '.join(produtos_por_cluster[cluster])}")
-        print(f"Sugestão de cross-selling: {', '.join(sugestoes) if sugestoes else 'Nenhuma sugestão encontrada'}")
+        print(f"Recomendações por coocorrência: {', '.join(sugestoes) if sugestoes else 'Nenhuma sugestão encontrada'}")
         print(f"E-mails do cluster: {', '.join(emails_por_cluster[cluster])}")
+
 
 if __name__ == "__main__":
     main()
